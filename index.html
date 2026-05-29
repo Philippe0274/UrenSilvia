@@ -6,7 +6,6 @@
 <meta name="theme-color" content="#0e2a47" />
 <title>Urenregistratie Kuisvrouw</title>
 
-<!-- PWA / homescreen -->
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
@@ -144,6 +143,10 @@
     transition:background 0.15s;
   }
   button:hover{background:#1976d2}
+  button.secondary{
+    background:#6b7a90;
+  }
+  button.secondary:hover{background:#515d6f}
 
   .monthTitle{
     text-align:center;
@@ -227,7 +230,7 @@
   .checkline input{width:auto}
   .note{font-size:12px;color:var(--muted);line-height:1.45}
   .noteInput{padding:7px;font-size:12px;border-radius:8px}
-  .actions{display:grid;grid-template-columns:1fr;gap:10px}
+  .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .footer{font-size:12px;color:var(--muted);text-align:center;margin:18px}
 
   @media(max-width:760px){
@@ -274,6 +277,8 @@
 
   <div class="panel actions">
     <button onclick="exportCSV()">Export CSV</button>
+    <button class="secondary" onclick="document.getElementById('importFile').click()">Import CSV</button>
+    <input type="file" id="importFile" accept=".csv" style="display:none" onchange="handleImport(this)" />
   </div>
   <div class="panel note">
     Standaard is een werkdag <b>5 uur</b> (09:00 – 14:00). Vul per dag het aankomst- en vertrekuur in: de uren worden automatisch berekend. Werd er <b>minder dan 5 uur</b> gewerkt, dan verschijnt een rode waarschuwingsbalk op die dag. Kostprijs wordt automatisch berekend aan €12/uur. Alle ingevulde gegevens blijven bewaard wanneer je tussen maanden of jaren wisselt.
@@ -291,7 +296,6 @@ const DEFAULT_START='09:00';
 const DEFAULT_END='14:00';
 const STANDARD_HOURS=5;
 
-// Migratie: oude opslag v1 → v2
 let data=JSON.parse(localStorage.getItem(storageKey)||'null');
 if(!data){
   const oldData=JSON.parse(localStorage.getItem('kuisvrouw_uren_v1')||'{}');
@@ -304,7 +308,6 @@ if(!data){
       leave:!!rec.leave,
       note:rec.note||''
     };
-    // Als de oude opslag uren had die niet 5 waren, proberen we het einduur aan te passen
     if(rec.hours && rec.hours!==5){
       const endH=9+rec.hours;
       const hh=Math.floor(endH), mm=Math.round((endH-hh)*60);
@@ -346,7 +349,7 @@ function holidays(y){
   set(addDays(e,39),'O.L.H. Hemelvaart');
   set(addDays(e,50),'Pinkstermaandag');
   set(new Date(y,6,21),'Nationale feestdag');
-  set(new Date(y,7,15),'O.L.V. Hemelvaart');
+  set(new Date(y,7,15),'O.V.L. Hemelvaart');
   set(new Date(y,10,1),'Allerheiligen');
   set(new Date(y,10,11),'Wapenstilstand');
   set(new Date(y,11,25),'Kerstmis');
@@ -404,7 +407,6 @@ function render(){
 function setVal(date,key,val){
   data[date]=Object.assign(defaultRec(),data[date]||{});
   data[date][key]=val;
-  // Als gebruiker "gewerkt" aanvinkt en uren zijn nog default, even niets bijzonders doen — defaults staan al
   save();
   render();
 }
@@ -432,7 +434,7 @@ function exportCSV(){
   let totalHours=0, totalCost=0;
   for(let d=1;d<=days;d++){
     const date=iso(y,m,d), dt=new Date(y,m,d), r=data[date];
-    if(!r) continue; // skip lege dagen — geen fantoomdata meer
+    if(!r) continue;
     const h=r.worked?hoursBetween(r.start,r.end):0;
     const cost=h*HOURLY_RATE;
     totalHours+=h; totalCost+=cost;
@@ -453,6 +455,58 @@ function exportCSV(){
   rows.push(`Totaal;;;;;;${formatHours(totalHours)};;${formatHours(totalCost)};`);
   const blob=new Blob(['\uFEFF'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`kuisvrouw_uren_${y}_${pad(m+1)}.csv`;a.click();
+}
+
+function handleImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const lines = text.split(/\r?\n/);
+    
+    if (lines.length <= 1) {
+      alert("Het geselecteerde bestand is leeg of ongeldig.");
+      return;
+    }
+
+    let currentData = JSON.parse(localStorage.getItem(storageKey) || '{}');
+    let importCount = 0;
+
+    // Sla de header over (i=1)
+    for (let i = 1; i < lines.length; i++) {
+      let line = lines[i].trim();
+      if (!line || line.startsWith('Totaal')) continue;
+
+      const cols = line.split(';');
+      if (cols.length < 10) continue; 
+      
+      const date = cols[0];
+      // Check of de datum het juiste format heeft (YYYY-MM-DD)
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+
+      currentData[date] = {
+        worked: cols[3] === 'Ja',
+        start: cols[4] || DEFAULT_START,
+        end: cols[5] || DEFAULT_END,
+        leave: cols[7] === 'Ja',
+        note: cols[9] ? cols[9].replaceAll(',', ';') : ''
+      };
+      importCount++;
+    }
+
+    if (importCount > 0) {
+      data = currentData;
+      save();
+      render();
+      alert(`${importCount} dagen succesvol geïmporteerd zonder dataverlies!`);
+    } else {
+      alert("Er zijn geen geldige rijen gevonden om te importeren. Zorg dat het een origineel export-bestand is.");
+    }
+    input.value = ''; // Reset de file input zodat dezelfde file nogmaals gekozen kan worden indien nodig
+  };
+  reader.readAsText(file);
 }
 
 init();
