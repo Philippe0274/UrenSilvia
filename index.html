@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#0e2a47" />
+<title>Urenregistratie Kuisvrouw</title>
+
+<!-- PWA / homescreen -->
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Kuisvrouw" />
+
+<style>
+  :root{
+    --bg:#f3f6fb;
+    --card:#ffffff;
+    --ink:#0e2a47;
+    --muted:#6b7a90;
+    --accent:#0e2a47;
+    --accent2:#1f88e5;
+    --accent-soft:#e8f1fb;
+    --line:#dde6f1;
+    --holiday:#fdecec; --holiday-border:#f4b9b9;
+    --weekend:#eef3fb;
+    --leave:#fff6d6; --leave-border:#e6c860;
+    --warn:#e53935; --warn-soft:#ffe5e3;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* === Header === */
+  .app-header{
+    background:linear-gradient(135deg,#0e2a47 0%,#163a63 55%,#1f88e5 130%);
+    color:white;
+    padding:20px 18px 22px;
+    border-bottom-left-radius:24px;
+    border-bottom-right-radius:24px;
+    box-shadow:0 6px 20px rgba(14,42,71,0.25);
+    position:relative;
+    overflow:hidden;
+  }
+  .app-header::after{
+    /* subtiele glanscirkel rechtsboven */
+    content:"";
+    position:absolute;
+    width:180px;height:180px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(31,136,229,0.35), transparent 70%);
+    top:-60px; right:-50px;
+    pointer-events:none;
+  }
+  .app-header-inner{
+    max-width:980px;
+    margin:0 auto;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    position:relative;
+    z-index:1;
+  }
+  .app-logo{
+    width:54px;height:54px;
+    border-radius:14px;
+    background:white;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+    box-shadow:0 3px 10px rgba(0,0,0,0.2);
+    overflow:hidden;
+  }
+  .app-logo img{width:100%;height:100%;object-fit:cover;display:block}
+  .app-header-text{flex:1;min-width:0}
+  .app-header h1{
+    margin:0;
+    font-size:21px;
+    font-weight:700;
+    letter-spacing:-0.3px;
+    line-height:1.15;
+  }
+  .app-header h1 .accent{color:#7fc4ff}
+  .app-header .app-sub{
+    margin-top:4px;
+    font-size:13px;
+    opacity:0.85;
+    font-weight:400;
+  }
+  .app-header-rate{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-top:8px;
+    background:rgba(255,255,255,0.14);
+    padding:4px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:500;
+  }
+  @media(max-width:480px){
+    .app-header{padding:16px 14px 18px}
+    .app-header h1{font-size:18px}
+    .app-logo{width:46px;height:46px;border-radius:12px}
+  }
+
+  /* === Layout === */
+  .wrap{padding:14px;max-width:980px;margin:auto}
+  .panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:14px;
+    margin:12px 0;
+    box-shadow:0 1px 3px rgba(14,42,71,0.05);
+  }
+  .controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:500}
+  select,input,button{
+    width:100%;
+    padding:10px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    font-size:15px;
+    background:white;
+    color:var(--ink);
+    font-family:inherit;
+  }
+  select:focus,input:focus{outline:none;border-color:var(--accent2)}
+  button{
+    background:var(--accent2);
+    color:white;
+    border:none;
+    font-weight:600;
+    cursor:pointer;
+    transition:background 0.15s;
+  }
+  button:hover{background:#1976d2}
+
+  .monthTitle{
+    text-align:center;
+    font-size:19px;
+    font-weight:700;
+    margin:6px 0 14px;
+    color:var(--ink);
+  }
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .stat{
+    background:var(--accent-soft);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px 6px;
+    text-align:center;
+  }
+  .stat b{display:block;font-size:20px;color:var(--accent);font-weight:700;line-height:1.15}
+  .stat span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px;display:block;margin-top:3px}
+  .stat.cost{background:#e8f5ec}
+  .stat.cost b{color:#2f7d5b}
+  @media(max-width:480px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+  }
+
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .dow{
+    font-weight:600;
+    text-align:center;
+    color:var(--muted);
+    font-size:11px;
+    padding:4px;
+    text-transform:uppercase;
+    letter-spacing:0.3px;
+  }
+  .day{
+    background:white;
+    border:1px solid var(--line);
+    border-radius:12px;
+    min-height:160px;
+    padding:8px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    position:relative;
+  }
+  .day.weekend{background:var(--weekend)}
+  .day.holiday{background:var(--holiday);border-color:var(--holiday-border)}
+  .day.leave{background:var(--leave);border-color:var(--leave-border)}
+  .day.short{border-color:var(--warn)}
+  .num{font-weight:700;font-size:16px;display:flex;justify-content:space-between;gap:4px;align-items:center}
+  .badge{
+    font-size:10px;
+    border-radius:999px;
+    padding:3px 8px;
+    background:rgba(0,0,0,0.06);
+    color:#555;
+    white-space:nowrap;
+    font-weight:500;
+  }
+  .holidayName{font-size:11px;color:#8b1e1e;font-weight:600;line-height:1.2}
+  .warnbar{
+    background:var(--warn);
+    color:white;
+    font-size:11px;
+    font-weight:600;
+    text-align:center;
+    padding:4px 6px;
+    border-radius:6px;
+    line-height:1.2;
+  }
+  .timerow{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .hoursline{
+    font-size:12px;
+    color:var(--muted);
+    text-align:center;
+    padding:2px;
+  }
+  .hoursline b{color:var(--ink);font-size:13px}
+  .smallInput{padding:7px;font-size:13px;border-radius:8px}
+  .checkline{display:flex;align-items:center;gap:6px;font-size:12px;color:#374151}
+  .checkline input{width:auto}
+  .note{font-size:12px;color:var(--muted);line-height:1.45}
+  .noteInput{padding:7px;font-size:12px;border-radius:8px}
+  .actions{display:grid;grid-template-columns:1fr;gap:10px}
+  .footer{font-size:12px;color:var(--muted);text-align:center;margin:18px}
+
+  @media(max-width:760px){
+    .grid{grid-template-columns:1fr}
+    .dow{display:none}
+    .controls,.actions{grid-template-columns:1fr}
+    .day{min-height:auto}
+    .num{font-size:18px}
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="app-header-inner">
+    <div class="app-logo">
+      <img src="icon-192.png" alt="" onerror="this.parentNode.innerHTML='🧽';this.parentNode.style.fontSize='28px';this.parentNode.style.background='white';this.parentNode.style.color='#0e2a47'" />
+    </div>
+    <div class="app-header-text">
+      <h1>Urenregistratie <span class="accent">Kuisvrouw</span></h1>
+      <div class="app-sub">Werkuren, verlof en kostprijs per maand</div>
+      <div class="app-header-rate">💶 €12 / uur</div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="panel controls">
+    <div><label>Maand</label><select id="month"></select></div>
+    <div><label>Jaar</label><select id="year"></select></div>
+  </div>
+
+  <div class="panel stats">
+    <div class="stat"><b id="workedDays">0</b><span>gewerkte dagen</span></div>
+    <div class="stat"><b id="workedHours">0</b><span>uren</span></div>
+    <div class="stat"><b id="leaveDays">0</b><span>verlof</span></div>
+    <div class="stat cost"><b id="totalCost">€0</b><span>kostprijs</span></div>
+  </div>
+
+  <div class="panel">
+    <div class="monthTitle" id="monthTitle"></div>
+    <div class="grid" id="calendar"></div>
+  </div>
+
+  <div class="panel actions">
+    <button onclick="exportCSV()">Export CSV</button>
+  </div>
+  <div class="panel note">
+    Standaard is een werkdag <b>5 uur</b> (09:00 – 14:00). Vul per dag het aankomst- en vertrekuur in: de uren worden automatisch berekend. Werd er <b>minder dan 5 uur</b> gewerkt, dan verschijnt een rode waarschuwingsbalk op die dag. Kostprijs wordt automatisch berekend aan €12/uur. Alle ingevulde gegevens blijven bewaard wanneer je tussen maanden of jaren wisselt.
+  </div>
+</div>
+<div class="footer">Gegevens worden lokaal opgeslagen in deze browser/telefoon.</div>
+
+<script>
+const monthNames=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+const dayNames=['ma','di','wo','do','vr','za','zo'];
+const startYear=2026, endYear=2030;
+const storageKey='kuisvrouw_uren_v2';
+const HOURLY_RATE=12;
+const DEFAULT_START='09:00';
+const DEFAULT_END='14:00';
+const STANDARD_HOURS=5;
+
+// Migratie: oude opslag v1 → v2
+let data=JSON.parse(localStorage.getItem(storageKey)||'null');
+if(!data){
+  const oldData=JSON.parse(localStorage.getItem('kuisvrouw_uren_v1')||'{}');
+  data={};
+  for(const [date,rec] of Object.entries(oldData)){
+    data[date]={
+      worked:!!rec.worked,
+      start:DEFAULT_START,
+      end:DEFAULT_END,
+      leave:!!rec.leave,
+      note:rec.note||''
+    };
+    // Als de oude opslag uren had die niet 5 waren, proberen we het einduur aan te passen
+    if(rec.hours && rec.hours!==5){
+      const endH=9+rec.hours;
+      const hh=Math.floor(endH), mm=Math.round((endH-hh)*60);
+      data[date].end=`${pad(hh)}:${pad(mm)}`;
+    }
+  }
+  if(Object.keys(data).length) localStorage.setItem(storageKey,JSON.stringify(data));
+}
+
+function pad(n){return String(n).padStart(2,'0')}
+function iso(y,m,d){return `${y}-${pad(m+1)}-${pad(d)}`}
+function save(){localStorage.setItem(storageKey,JSON.stringify(data));updateStats()}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+function hoursBetween(start,end){
+  if(!start||!end) return 0;
+  const [sh,sm]=start.split(':').map(Number);
+  const [eh,em]=end.split(':').map(Number);
+  if(isNaN(sh)||isNaN(eh)) return 0;
+  let mins=(eh*60+em)-(sh*60+sm);
+  if(mins<0) mins=0;
+  return mins/60;
+}
+function formatHours(h){
+  return h.toFixed(2).replace('.',',').replace(',00','');
+}
+
+function easterDate(y){
+  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),day=((h+l-7*m+114)%31)+1;
+  return new Date(y,mo-1,day);
+}
+function addDays(dt,n){let x=new Date(dt);x.setDate(x.getDate()+n);return x}
+function holidays(y){
+  const e=easterDate(y); let h={};
+  function set(d,name){h[iso(d.getFullYear(),d.getMonth(),d.getDate())]=name}
+  set(new Date(y,0,1),'Nieuwjaar');
+  set(addDays(e,1),'Paasmaandag');
+  set(new Date(y,4,1),'Dag van de Arbeid');
+  set(addDays(e,39),'O.L.H. Hemelvaart');
+  set(addDays(e,50),'Pinkstermaandag');
+  set(new Date(y,6,21),'Nationale feestdag');
+  set(new Date(y,7,15),'O.L.V. Hemelvaart');
+  set(new Date(y,10,1),'Allerheiligen');
+  set(new Date(y,10,11),'Wapenstilstand');
+  set(new Date(y,11,25),'Kerstmis');
+  return h;
+}
+
+function init(){
+  const m=document.getElementById('month'), y=document.getElementById('year');
+  monthNames.forEach((name,i)=>m.add(new Option(name,i)));
+  for(let yr=startYear;yr<=endYear;yr++) y.add(new Option(yr,yr));
+  m.value=4; y.value=2026;
+  m.onchange=render; y.onchange=render; render();
+}
+
+function defaultRec(){
+  return {worked:false,start:DEFAULT_START,end:DEFAULT_END,leave:false,note:''};
+}
+
+function render(){
+  const m=+document.getElementById('month').value, y=+document.getElementById('year').value;
+  document.getElementById('monthTitle').textContent=`${monthNames[m]} ${y}`;
+  const cal=document.getElementById('calendar'); cal.innerHTML='';
+  dayNames.forEach(d=>{const el=document.createElement('div');el.className='dow';el.textContent=d;cal.appendChild(el)});
+  const first=new Date(y,m,1); let offset=(first.getDay()+6)%7;
+  for(let i=0;i<offset;i++){const empty=document.createElement('div');empty.className='day';empty.style.visibility='hidden';cal.appendChild(empty)}
+  const days=new Date(y,m+1,0).getDate(), hs=holidays(y);
+  for(let d=1;d<=days;d++){
+    const date=iso(y,m,d), dt=new Date(y,m,d), wd=dt.getDay();
+    const rec=Object.assign(defaultRec(),data[date]||{});
+    const hours=rec.worked?hoursBetween(rec.start,rec.end):0;
+    const short=rec.worked && hours>0 && hours<STANDARD_HOURS;
+    const div=document.createElement('div');
+    div.className='day'
+      +((wd==0||wd==6)?' weekend':'')
+      +(hs[date]?' holiday':'')
+      +(rec.leave?' leave':'')
+      +(short?' short':'');
+    div.innerHTML=`
+      <div class="num"><span>${d}</span><span class="badge">werkdag</span></div>
+      ${hs[date]?`<div class="holidayName">${escapeHtml(hs[date])}</div>`:''}
+      ${short?`<div class="warnbar">⚠ minder dan ${STANDARD_HOURS}u</div>`:''}
+      <label class="checkline"><input type="checkbox" ${rec.worked?'checked':''} onchange="setVal('${date}','worked',this.checked)"> gewerkt</label>
+      <div class="timerow">
+        <div><label>Van</label><input class="smallInput" type="time" value="${rec.start}" onchange="setVal('${date}','start',this.value)"></div>
+        <div><label>Tot</label><input class="smallInput" type="time" value="${rec.end}" onchange="setVal('${date}','end',this.value)"></div>
+      </div>
+      <div class="hoursline">${rec.worked?`<b>${formatHours(hours)} u</b> gewerkt`:'<span style="opacity:0.5">niet gewerkt</span>'}</div>
+      <div><label>Opmerking</label><input class="noteInput smallInput" value="${escapeHtml(rec.note||'')}" onchange="setVal('${date}','note',this.value)"></div>
+      <label class="checkline"><input type="checkbox" ${rec.leave?'checked':''} onchange="setVal('${date}','leave',this.checked)"> verlof kuisvrouw</label>`;
+    cal.appendChild(div);
+  }
+  updateStats();
+}
+
+function setVal(date,key,val){
+  data[date]=Object.assign(defaultRec(),data[date]||{});
+  data[date][key]=val;
+  // Als gebruiker "gewerkt" aanvinkt en uren zijn nog default, even niets bijzonders doen — defaults staan al
+  save();
+  render();
+}
+
+function updateStats(){
+  const m=+document.getElementById('month').value, y=+document.getElementById('year').value;
+  let wd=0, hrs=0, lv=0;
+  const days=new Date(y,m+1,0).getDate();
+  for(let d=1;d<=days;d++){
+    const r=data[iso(y,m,d)];
+    if(!r) continue;
+    if(r.worked){wd++; hrs+=hoursBetween(r.start,r.end)}
+    if(r.leave) lv++;
+  }
+  document.getElementById('workedDays').textContent=wd;
+  document.getElementById('workedHours').textContent=formatHours(hrs);
+  document.getElementById('leaveDays').textContent=lv;
+  document.getElementById('totalCost').textContent='€'+formatHours(hrs*HOURLY_RATE);
+}
+
+function exportCSV(){
+  const m=+document.getElementById('month').value, y=+document.getElementById('year').value, hs=holidays(y);
+  let rows=['Datum;Dag;Feestdag;Gewerkt;Van;Tot;Uren;Verlof kuisvrouw;Kostprijs (€);Opmerking'];
+  const days=new Date(y,m+1,0).getDate();
+  let totalHours=0, totalCost=0;
+  for(let d=1;d<=days;d++){
+    const date=iso(y,m,d), dt=new Date(y,m,d), r=data[date];
+    if(!r) continue; // skip lege dagen — geen fantoomdata meer
+    const h=r.worked?hoursBetween(r.start,r.end):0;
+    const cost=h*HOURLY_RATE;
+    totalHours+=h; totalCost+=cost;
+    rows.push([
+      date,
+      dayNames[(dt.getDay()+6)%7],
+      hs[date]||'',
+      r.worked?'Ja':'Nee',
+      r.worked?r.start:'',
+      r.worked?r.end:'',
+      formatHours(h),
+      r.leave?'Ja':'Nee',
+      formatHours(cost),
+      (r.note||'').replaceAll(';',',')
+    ].join(';'));
+  }
+  rows.push('');
+  rows.push(`Totaal;;;;;;${formatHours(totalHours)};;${formatHours(totalCost)};`);
+  const blob=new Blob(['\uFEFF'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`kuisvrouw_uren_${y}_${pad(m+1)}.csv`;a.click();
+}
+
+init();
+</script>
+</body>
+</html>
